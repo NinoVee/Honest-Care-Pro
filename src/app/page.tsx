@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { StatusPill } from "@/components/StatusPill";
 
 export default async function DashboardPage() {
   const [todaysVisits, unsignedPlans, recentAudit, patientCount] = await Promise.all([
@@ -109,20 +110,4 @@ function DashboardCard({
 
 function EmptyRow({ text }: { text: string }) {
   return <p className="py-2 text-sm text-subtle">{text}</p>;
-}
-
-export function StatusPill({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    SCHEDULED: "bg-alert-info/10 text-alert-info",
-    CONFIRMED: "bg-teal-light text-teal",
-    COMPLETED: "bg-alert-good/10 text-alert-good",
-    MISSED: "bg-alert-critical/10 text-alert-critical",
-    CANCELLED: "bg-alert-critical/10 text-alert-critical",
-    UNASSIGNED: "bg-alert-urgent/10 text-alert-urgent",
-  };
-  return (
-    <span className={`pill ${styles[status] ?? "bg-black/5 text-subtle"}`}>
-      {status.replace("_", " ")}
-    </span>
-  );
 }
