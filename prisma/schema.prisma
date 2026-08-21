@@ -1,0 +1,171 @@
+// Honest Care — Prisma schema (Phase 2/3/4/5 vertical slice)
+//
+// Scoped down from the full spec's 40+ table list to what this slice
+// actually uses. Field/identifier naming stays FHIR-friendly (e.g.
+// separate `externalIdentifiers` on Patient) so a FHIR mapping layer
+// can be added later without renaming core columns.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  PHYSICIAN
+  NURSE
+  SCHEDULER
+}
+
+enum TreatmentPlanStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  DISCONTINUED
+}
+
+enum VisitStatus {
+  UNASSIGNED
+  SCHEDULED
+  CONFIRMED
+  EN_ROUTE
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  MISSED
+  CANCELLED
+  RESCHEDULED
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users    User[]
+  patients Patient[]
+}
+
+model User {
+  id             String       @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  name           String
+  email          String
+  role           UserRole
+  createdAt      DateTime     @default(now())
+
+  treatmentPlans TreatmentPlan[] @relation("OrderingPhysician")
+  assignedVisits Visit[]         @relation("AssignedNurse")
+  auditEvents    AuditLog[]
+
+  @@unique([organizationId, email])
+}
+
+model Patient {
+  id             String       @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+
+  // FHIR-friendly: a Patient can carry identifiers from multiple source
+  // systems (MRN, external EHR id, etc.) without changing this table.
+  medicalRecordNumber String?
+  firstName            String
+  middleName           String?
+  lastName             String
+  dateOfBirth          DateTime
+  phone                String?
+  email                String?
+  addressLine          String?
+  city                 String?
+  state                String?
+  postalCode           String?
+
+  allergies   String[] @default([])
+  precautions String[] @default([]) // e.g. "Fall risk", "Infection precaution"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  treatmentPlans TreatmentPlan[]
+  visits         Visit[]
+  auditEvents    AuditLog[]
+}
+
+/// A treatment plan is versioned: editing an ACTIVE or PENDING_SIGNATURE
+/// plan creates a new TreatmentPlan row with `previousVersionId` set,
+/// rather than mutating the signed original. This is the DB-level
+/// enforcement of "never overwrite a signed treatment plan."
+model TreatmentPlan {
+  id         String   @id @default(uuid())
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  patientId  String
+
+  physician   User   @relation("OrderingPhysician", fields: [physicianId], references: [id])
+  physicianId String
+
+  diagnosis           String
+  treatmentType        String
+  description          String
+  instructions          String?
+  frequency             String   // e.g. "3x/week"
+  startDate             DateTime
+  endDate               DateTime?
+  requiredVitals        String[] @default([])
+  notifyIfSystolicOver  Int?
+  notifyIfSystolicUnder Int?
+  notifyIfSpo2Under     Int?
+
+  status       TreatmentPlanStatus @default(DRAFT)
+  signedAt     DateTime?
+  signedBy     String?             // physician name captured at signing time
+
+  previousVersionId String?
+  version           Int      @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visits Visit[]
+}
+
+model Visit {
+  id         String   @id @default(uuid())
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  patientId  String
+
+  treatmentPlan   TreatmentPlan? @relation(fields: [treatmentPlanId], references: [id])
+  treatmentPlanId String?
+
+  nurse   User?   @relation("AssignedNurse", fields: [nurseId], references: [id])
+  nurseId String?
+
+  serviceType String   // e.g. "Blood Draw", "IV Medication", "Wound Care"
+  scheduledAt DateTime
+  durationMin Int      @default(45)
+  status      VisitStatus @default(UNASSIGNED)
+  instructions String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Append-only. Every mutation in this slice writes one of these.
+model AuditLog {
+  id         String   @id @default(uuid())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  patient    Patient? @relation(fields: [patientId], references: [id])
+  patientId  String?
+  action     String   // e.g. "patient.created", "treatment_plan.signed"
+  resourceType String
+  resourceId   String
+  createdAt  DateTime @default(now())
+}
