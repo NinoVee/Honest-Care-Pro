@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="bg-navy text-white">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
             <Link href="/" className="flex items-center gap-3">
-              <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-teal/15">
+              <span className="flex h-14 w-14 items-center justify-center">
                 <ShieldCrossIcon />
               </span>
               <div className="leading-tight">
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
 
         <footer className="mx-auto max-w-6xl px-6 py-6 text-center text-xs text-subtle">
-          Honest Care — Delivering With Trust.
+          Honest Care — Care With Trust.
         </footer>
       </body>
     </html>
