@@ -23,14 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </Link>
 
-            <nav className="flex items-center gap-6 text-sm font-medium text-white/80">
-              <Link href="/" className="hover:text-white">Dashboard</Link>
-              <Link href="/patients" className="hover:text-white">Patients</Link>
-              <Link href="/schedule" className="hover:text-white">Schedule</Link>
-              <Link href="/vitals" className="hover:text-white">Vitals</Link>
-              <Link href="/tablets" className="hover:text-white">Tablets</Link>
-              <Link href="/import" className="hover:text-white">Import</Link>
-            </nav>
+           
 
             {/* TODO: replace with real session-based auth. */}
             <div className="text-xs text-white/50">Signed in as Dr. Test Physician</div>
