@@ -179,6 +179,35 @@ export async function assignTablet(patientId: string) {
   revalidatePath("/tablets");
 }
 
+/// Frees a tablet from whichever patient currently has it, without
+/// discharging the patient — used from the Tablet Inventory page when
+/// a kit needs to be reclaimed (e.g. hardware issue, patient switching
+/// devices) rather than the patient's care ending.
+export async function unassignTablet(tabletId: string) {
+  const tablet = await db.tablet.findUnique({
+    where: { id: tabletId },
+    include: { currentPatient: true },
+  });
+  if (!tablet || !tablet.currentPatient) {
+    throw new Error("This tablet isn't currently assigned to a patient.");
+  }
+
+  await db.$transaction([
+    db.patient.update({ where: { id: tablet.currentPatient.id }, data: { assignedTabletId: null } }),
+    db.tablet.update({ where: { id: tabletId }, data: { status: "AVAILABLE" } }),
+  ]);
+
+  await recordAuditEvent({
+    patientId: tablet.currentPatient.id,
+    action: "tablet.unassigned",
+    resourceType: "Tablet",
+    resourceId: tabletId,
+  });
+
+  revalidatePath("/tablets");
+  revalidatePath(`/patients/${tablet.currentPatient.id}`);
+}
+
 export async function dischargePatient(patientId: string) {
   const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
 

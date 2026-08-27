@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { unassignTablet } from "@/app/patients/actions";
+import { ConfirmUnassignButton } from "./ConfirmUnassignButton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,14 @@ export default async function TabletsPage() {
               {t.status}
             </span>
             {t.currentPatient && (
-              <p className="mt-2 text-xs text-subtle">{t.currentPatient.firstName} {t.currentPatient.lastName}</p>
+              <>
+                <p className="mt-2 text-xs text-subtle">{t.currentPatient.firstName} {t.currentPatient.lastName}</p>
+                <ConfirmUnassignButton
+                  tabletId={t.id}
+                  patientName={`${t.currentPatient.firstName} ${t.currentPatient.lastName}`}
+                  action={unassignTablet}
+                />
+              </>
             )}
           </div>
         ))}
