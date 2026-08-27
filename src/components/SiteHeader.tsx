@@ -31,7 +31,6 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        {/* Desktop nav — hidden on small screens */}
         <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="hover:text-white">
@@ -44,7 +43,6 @@ export function SiteHeader() {
           Signed in as Dr. Test Physician
         </div>
 
-        {/* Hamburger button — only visible below md breakpoint */}
         <button
           onClick={() => setIsMenuOpen((v) => !v)}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white md:hidden"
@@ -54,7 +52,6 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu */}
       {isMenuOpen && (
         <nav className="flex flex-col gap-1 border-t border-white/10 bg-navy-light px-4 py-3 md:hidden">
           {navLinks.map((link) => (
@@ -86,4 +83,8 @@ function MenuIcon() {
 
 function CloseIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M6 6l12 12M18 6L6 18" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
