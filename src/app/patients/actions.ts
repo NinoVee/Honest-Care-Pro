@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 
@@ -166,7 +167,7 @@ export async function assignTablet(patientId: string) {
 export async function dischargePatient(patientId: string) {
   const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
 
-  const ops = [
+  const ops: Prisma.PrismaPromise<unknown>[] = [
     db.patient.update({
       where: { id: patientId },
       data: { status: "DISCHARGED", dischargedAt: new Date(), assignedTabletId: null },
