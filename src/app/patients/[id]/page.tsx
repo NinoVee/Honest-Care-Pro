@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert } from "../actions";
+import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert, assignTablet } from "../actions";
 import { StatusPill } from "@/components/StatusPill";
+import { HeartRateTrendChart } from "./HeartRateTrendChart";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     db.measurement.findMany({
       where: { patientId: patient.id },
       orderBy: { measuredAt: "desc" },
-      take: 20,
+      take: 50,
     }),
     db.alert.findMany({
       where: { patientId: patient.id, acknowledgedAt: null },
@@ -30,7 +31,10 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     }),
   ]);
 
-  const activePlans = patient.treatmentPlans.filter((p) => p.status === "ACTIVE");
+  const heartRatePoints = vitals
+    .filter((v) => v.kind === "heart_rate" && v.value != null)
+    .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+    .map((v) => ({ measuredAt: v.measuredAt.toISOString(), value: v.value as number }));
 
   return (
     <div className="space-y-8">
@@ -40,9 +44,29 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         </h1>
         <p className="text-sm text-subtle">
           DOB {patient.dateOfBirth.toLocaleDateString()} · MRN {patient.medicalRecordNumber ?? "—"}
-          {patient.assignedTablet && <> · Kit {patient.assignedTablet.identifier}</>}
         </p>
       </div>
+
+      <section className="card p-4">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-subtle">
+          Assigned Device
+        </h2>
+        {patient.assignedTablet ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-lg font-medium text-ink">{patient.assignedTablet.identifier}</div>
+              <div className="text-xs text-subtle">Home monitoring kit — status: {patient.assignedTablet.status}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-subtle">No kit currently assigned to this patient.</p>
+            <form action={assignTablet.bind(null, patient.id)}>
+              <button type="submit" className="btn-secondary text-xs">Assign Next Available Kit</button>
+            </form>
+          </div>
+        )}
+      </section>
 
       {(patient.allergies.length > 0 || patient.precautions.length > 0) && (
         <div className="card border-l-4 border-l-alert-urgent p-4">
@@ -78,6 +102,11 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           ))}
         </div>
       )}
+
+      <section className="card p-4">
+        <h2 className="mb-3 text-lg font-semibold text-navy">Heart Rate Trend</h2>
+        <HeartRateTrendChart points={heartRatePoints} />
+      </section>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-navy">Recent Vitals</h2>
@@ -217,15 +246,6 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
               <div>
                 <label className="field-label" htmlFor="serviceType">Service</label>
                 <input className="field-input" id="serviceType" name="serviceType" required placeholder="Blood Draw" />
-              </div>
-              <div>
-                <label className="field-label" htmlFor="treatmentPlanId">Treatment Plan</label>
-                <select className="field-input" id="treatmentPlanId" name="treatmentPlanId">
-                  <option value="">— None —</option>
-                  {activePlans.map((p) => (
-                    <option key={p.id} value={p.id}>{p.treatmentType}</option>
-                  ))}
-                </select>
               </div>
               <div>
                 <label className="field-label" htmlFor="nurseId">Assign Nurse</label>
