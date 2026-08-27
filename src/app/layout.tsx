@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function ShieldCrossIcon() {
   return (
-    <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
+    <svg width="50" height="50" viewBox="0 0 24 24" fill="none">
       <path
         d="M12 2 4 5v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V5l-8-3Z"
         stroke="white"
