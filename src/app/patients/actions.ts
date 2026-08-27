@@ -19,9 +19,19 @@ export async function createPatient(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const dobRaw = String(formData.get("dateOfBirth") ?? "");
+  const tabletId = String(formData.get("tabletId") ?? "") || null;
 
   if (!firstName || !lastName || !dobRaw) {
     throw new Error("First name, last name, and date of birth are required.");
+  }
+
+  // If a kit was selected, confirm it's still available — someone else
+  // may have grabbed it between page load and form submit.
+  if (tabletId) {
+    const tablet = await db.tablet.findUnique({ where: { id: tabletId } });
+    if (!tablet || tablet.status !== "AVAILABLE") {
+      throw new Error("That kit is no longer available. Please choose a different one.");
+    }
   }
 
   const patient = await db.patient.create({
@@ -41,8 +51,19 @@ export async function createPatient(formData: FormData) {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+      assignedTabletId: tabletId,
     },
   });
+
+  if (tabletId) {
+    await db.tablet.update({ where: { id: tabletId }, data: { status: "ASSIGNED" } });
+    await recordAuditEvent({
+      patientId: patient.id,
+      action: "tablet.assigned",
+      resourceType: "Tablet",
+      resourceId: tabletId,
+    });
+  }
 
   await recordAuditEvent({
     action: "patient.created",
@@ -52,6 +73,7 @@ export async function createPatient(formData: FormData) {
   });
 
   revalidatePath("/patients");
+  revalidatePath("/tablets");
   redirect(`/patients/${patient.id}`);
 }
 
@@ -144,66 +166,4 @@ export async function assignTablet(patientId: string) {
   }
 
   await db.$transaction([
-    db.tablet.update({ where: { id: tablet.id }, data: { status: "ASSIGNED" } }),
-    db.patient.update({ where: { id: patientId }, data: { assignedTabletId: tablet.id } }),
-  ]);
-
-  await recordAuditEvent({
-    patientId,
-    action: "tablet.assigned",
-    resourceType: "Tablet",
-    resourceId: tablet.id,
-  });
-
-  revalidatePath(`/patients/${patientId}`);
-  revalidatePath("/tablets");
-}
-
-export async function dischargePatient(patientId: string) {
-  const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
-
-  const ops: Prisma.PrismaPromise<unknown>[] = [
-    db.patient.update({
-      where: { id: patientId },
-      data: { status: "DISCHARGED", dischargedAt: new Date(), assignedTabletId: null },
-    }),
-  ];
-  if (patient.assignedTabletId) {
-    ops.push(db.tablet.update({ where: { id: patient.assignedTabletId }, data: { status: "AVAILABLE" } }));
-  }
-  await db.$transaction(ops);
-
-  await recordAuditEvent({
-    patientId,
-    action: "patient.discharged",
-    resourceType: "Patient",
-    resourceId: patientId,
-  });
-
-  revalidatePath(`/patients/${patientId}`);
-  revalidatePath("/tablets");
-  revalidatePath("/patients");
-}
-
-export async function acknowledgeAlert(alertId: string, patientId: string) {
-  await db.alert.update({
-    where: { id: alertId },
-    data: { acknowledgedAt: new Date(), acknowledgedBy: "Dr. Test Physician" },
-  });
-
-  await recordAuditEvent({
-    patientId,
-    action: "alert.acknowledged",
-    resourceType: "Alert",
-    resourceId: alertId,
-  });
-
-  revalidatePath("/vitals");
-  revalidatePath(`/patients/${patientId}`);
-}
-
-function numberOrNull(value: FormDataEntryValue | null): number | null {
-  if (!value) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
+    db.tablet.update({

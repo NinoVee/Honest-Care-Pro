@@ -5,11 +5,14 @@ import { createPatient } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function PatientsPage() {
-  const patients = await db.patient.findMany({
-    where: { deletedAt: null },
-    orderBy: { lastName: "asc" },
-    include: { treatmentPlans: { where: { status: "ACTIVE" } } },
-  });
+  const [patients, availableTablets] = await Promise.all([
+    db.patient.findMany({
+      where: { deletedAt: null },
+      orderBy: { lastName: "asc" },
+      include: { treatmentPlans: { where: { status: "ACTIVE" } }, assignedTablet: true },
+    }),
+    db.tablet.findMany({ where: { status: "AVAILABLE" }, orderBy: { identifier: "asc" } }),
+  ]);
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
@@ -31,6 +34,7 @@ export default async function PatientsPage() {
                 </div>
                 <div className="text-xs text-subtle">
                   DOB {p.dateOfBirth.toLocaleDateString()} · MRN {p.medicalRecordNumber ?? "—"}
+                  {p.assignedTablet && <> · Kit {p.assignedTablet.identifier}</>}
                 </div>
               </div>
               <span className="pill bg-teal-light text-teal">
@@ -92,6 +96,20 @@ export default async function PatientsPage() {
             <label className="field-label" htmlFor="allergies">Allergies (comma-separated)</label>
             <input className="field-input" id="allergies" name="allergies" placeholder="Penicillin, Latex" />
           </div>
+
+          <div>
+            <label className="field-label" htmlFor="tabletId">Kit # (Tablet Assignment)</label>
+            <select className="field-input" id="tabletId" name="tabletId">
+              <option value="">— Assign later —</option>
+              {availableTablets.map((t) => (
+                <option key={t.id} value={t.id}>{t.identifier}</option>
+              ))}
+            </select>
+            {availableTablets.length === 0 && (
+              <p className="mt-1 text-xs text-alert-urgent">All 20 kits are currently assigned or in maintenance.</p>
+            )}
+          </div>
+
           <button type="submit" className="btn-primary w-full justify-center">
             Create Patient
           </button>
