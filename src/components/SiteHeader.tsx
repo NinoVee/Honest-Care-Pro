@@ -19,7 +19,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
         <Link href="/" className="flex min-w-0 items-center gap-2 md:gap-3" onClick={() => setIsMenuOpen(false)}>
           <img
-            src="/logo-icon.png"
+            src="/logo_set_1_64x64.png"
             alt="Honest Care"
             className="h-10 w-10 shrink-0 object-contain md:h-14 md:w-14"
           />
@@ -86,8 +86,4 @@ function MenuIcon() {
 
 function CloseIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M6 6l12 12M18 6L6 18" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"></svg>
