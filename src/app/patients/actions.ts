@@ -179,10 +179,6 @@ export async function assignTablet(patientId: string) {
   revalidatePath("/tablets");
 }
 
-/// Frees a tablet from whichever patient currently has it, without
-/// discharging the patient — used from the Tablet Inventory page when
-/// a kit needs to be reclaimed (e.g. hardware issue, patient switching
-/// devices) rather than the patient's care ending.
 export async function unassignTablet(tabletId: string) {
   const tablet = await db.tablet.findUnique({
     where: { id: tabletId },
@@ -232,6 +228,42 @@ export async function dischargePatient(patientId: string) {
   revalidatePath(`/patients/${patientId}`);
   revalidatePath("/tablets");
   revalidatePath("/patients");
+}
+
+/// Soft-removes a patient from the active program. Nothing is deleted —
+/// `deletedAt` is set, which already excludes them from the /patients
+/// list query. Their tablet (if any) is freed. All records (visits,
+/// treatment plans, vitals, audit history) remain queryable in the
+/// database indefinitely.
+export async function removePatientFromProgram(patientId: string) {
+  const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
+
+  const ops: Prisma.PrismaPromise<unknown>[] = [
+    db.patient.update({
+      where: { id: patientId },
+      data: {
+        status: "DISCHARGED",
+        dischargedAt: new Date(),
+        deletedAt: new Date(),
+        assignedTabletId: null,
+      },
+    }),
+  ];
+  if (patient.assignedTabletId) {
+    ops.push(db.tablet.update({ where: { id: patient.assignedTabletId }, data: { status: "AVAILABLE" } }));
+  }
+  await db.$transaction(ops);
+
+  await recordAuditEvent({
+    patientId,
+    action: "patient.removed_from_program",
+    resourceType: "Patient",
+    resourceId: patientId,
+  });
+
+  revalidatePath("/patients");
+  revalidatePath("/tablets");
+  redirect("/patients");
 }
 
 export async function acknowledgeAlert(alertId: string, patientId: string) {

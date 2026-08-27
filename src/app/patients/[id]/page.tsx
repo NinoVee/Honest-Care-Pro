@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert, assignTablet } from "../actions";
+import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert, assignTablet, removePatientFromProgram } from "../actions";
 import { StatusPill } from "@/components/StatusPill";
 import { HeartRateTrendChart } from "./HeartRateTrendChart";
+import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
 
 export const dynamic = "force-dynamic";
 
@@ -277,6 +278,20 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           </details>
         </section>
       </div>
+
+      <section className="card border-l-4 border-l-alert-critical p-4">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-alert-critical">
+          Danger Zone
+        </h2>
+        <p className="mb-3 text-sm text-subtle">
+          Removing a patient clears them from the active app views. Their full record stays in the database permanently.
+        </p>
+        <ConfirmRemovePatientButton
+          patientId={patient.id}
+          patientName={`${patient.firstName} ${patient.lastName}`}
+          action={removePatientFromProgram}
+        />
+      </section>
     </div>
   );
 }
