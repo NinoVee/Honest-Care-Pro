@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   description: "A secure way to coordinate care, with full transparency.",
   icons: {
     icon: [
-      { url: "/favicons/favicon-64.png", sizes: "64x64", type: "image/png" },
-      { url: "/favicons/favicon-128.png", sizes: "128x128", type: "image/png" },
-      { url: "/favicons/favicon-256.png", sizes: "256x256", type: "image/png" },
+      { url: "/Icons/favicons/logo_set_1_64x64.png", sizes: "64x64", type: "image/png" },
+      { url: "/Icons/favicons/logo_set_1_128x128.png", sizes: "128x128", type: "image/png" },
+      { url: "/Icons/favicons/logo_set_1_256x256.png", sizes: "256x256", type: "image/png" },
     ],
     apple: [
-      { url: "/favicons/apple-touch-icon.png", sizes: "256x256", type: "image/png" },
+      { url: "/Icons/favicons/logo_set_1_256x256.png", sizes: "256x256", type: "image/png" },
     ],
   },
 };
