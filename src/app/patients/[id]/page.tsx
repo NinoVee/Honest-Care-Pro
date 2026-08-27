@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { createTreatmentPlan, signTreatmentPlan, scheduleVisit } from "../actions";
+import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert } from "../actions";
 import { StatusPill } from "@/components/StatusPill";
+
+export const dynamic = "force-dynamic";
 
 export default async function PatientDetailPage({ params }: { params: { id: string } }) {
   const patient = await db.patient.findUnique({
@@ -9,12 +11,25 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
     include: {
       treatmentPlans: { orderBy: { createdAt: "desc" } },
       visits: { orderBy: { scheduledAt: "desc" }, include: { nurse: true } },
+      assignedTablet: true,
     },
   });
 
   if (!patient) notFound();
 
-  const nurses = await db.user.findMany({ where: { role: "NURSE" } });
+  const [nurses, vitals, patientAlerts] = await Promise.all([
+    db.user.findMany({ where: { role: "NURSE" } }),
+    db.measurement.findMany({
+      where: { patientId: patient.id },
+      orderBy: { measuredAt: "desc" },
+      take: 20,
+    }),
+    db.alert.findMany({
+      where: { patientId: patient.id, acknowledgedAt: null },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
   const activePlans = patient.treatmentPlans.filter((p) => p.status === "ACTIVE");
 
   return (
@@ -25,6 +40,7 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         </h1>
         <p className="text-sm text-subtle">
           DOB {patient.dateOfBirth.toLocaleDateString()} · MRN {patient.medicalRecordNumber ?? "—"}
+          {patient.assignedTablet && <> · Kit {patient.assignedTablet.identifier}</>}
         </p>
       </div>
 
@@ -44,8 +60,46 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         </div>
       )}
 
+      {patientAlerts.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-alert-urgent">
+            Unacknowledged Vital Alerts ({patientAlerts.length})
+          </h2>
+          {patientAlerts.map((a) => (
+            <div key={a.id} className="card flex items-center justify-between border-l-4 border-l-alert-urgent p-4">
+              <div>
+                <div className="text-sm text-ink">{a.description}</div>
+                <div className="text-xs text-subtle">{new Date(a.createdAt).toLocaleString()}</div>
+              </div>
+              <form action={acknowledgeAlert.bind(null, a.id, patient.id)}>
+                <button type="submit" className="btn-secondary text-xs">Acknowledge</button>
+              </form>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-navy">Recent Vitals</h2>
+        <div className="card divide-y divide-black/5">
+          {vitals.length === 0 ? (
+            <p className="p-4 text-sm text-subtle">
+              No vitals submitted yet. Readings taken from the nurse's iPad during a visit will appear here.
+            </p>
+          ) : (
+            vitals.map((v) => (
+              <div key={v.id} className="flex items-center justify-between p-4">
+                <div className="text-sm font-medium text-ink">
+                  {v.kind.replace("_", " ")}: {v.kind === "blood_pressure" ? `${v.systolic}/${v.diastolic}` : v.value} {v.unit}
+                </div>
+                <div className="text-xs text-subtle">{new Date(v.measuredAt).toLocaleString()}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Treatment Plans */}
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-navy">Treatment Plans</h2>
 
@@ -135,7 +189,6 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           </details>
         </section>
 
-        {/* Visits */}
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-navy">Visits</h2>
 
