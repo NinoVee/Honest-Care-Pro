@@ -19,7 +19,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
         <Link href="/" className="flex min-w-0 items-center gap-2 md:gap-3" onClick={() => setIsMenuOpen(false)}>
           <img
-            src="/Icons/favicons/logo_set_1_64x64.png"
+            src="Public/Icons/favicons/logo_set_1_64x64.png"
             alt="Honest Care"
             className="h-10 w-10 shrink-0 object-contain md:h-14 md:w-14"
           />
