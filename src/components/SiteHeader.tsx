@@ -21,7 +21,7 @@ export function SiteHeader() {
           <img
             src="/favicons/logo_set_1_64x64.png"
             alt="Honest Care"
-            className="h-10 w-10 shrink-0 object-contain md:h-14 md:w-14"
+            className="h-20 w-20 shrink-0 object-contain md:h-30 md:w-30"
           />
           <div className="min-w-0 leading-tight">
             <div className="truncate font-display text-base font-semibold md:text-lg">Honest Care</div>
