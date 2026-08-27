@@ -137,7 +137,6 @@ export async function scheduleVisit(patientId: string, formData: FormData) {
   revalidatePath("/schedule");
 }
 
-/// Assigns the next AVAILABLE tablet from the pool of 20 to this patient.
 export async function assignTablet(patientId: string) {
   const tablet = await db.tablet.findFirst({ where: { status: "AVAILABLE" } });
   if (!tablet) {
@@ -160,10 +159,6 @@ export async function assignTablet(patientId: string) {
   revalidatePath("/tablets");
 }
 
-/// Discharges the patient and frees their tablet back to the pool.
-/// This is the "data transferred to the hospital on enrollment and
-/// discharge" checkpoint — logged here via the audit trail. Full C-CDA
-/// export back to the hospital EHR is a follow-up step, not built yet.
 export async function dischargePatient(patientId: string) {
   const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
 

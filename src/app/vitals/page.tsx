@@ -49,4 +49,11 @@ export default async function VitalsPage() {
                   {m.kind.replace("_", " ")}: {m.kind === "blood_pressure" ? `${m.systolic}/${m.diastolic}` : m.value} {m.unit}
                 </div>
               </div>
-              <div className="text-xs
+              <div className="text-xs text-subtle">{new Date(m.measuredAt).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

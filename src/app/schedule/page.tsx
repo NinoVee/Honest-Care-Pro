@@ -47,7 +47,7 @@ export default async function SchedulePage() {
                     </div>
                   </div>
                 </div>
-                <StatusPill text={v.status} color="var(--teal)" />
+                <StatusPill status={v.status} />
               </Link>
             ))}
           </div>
