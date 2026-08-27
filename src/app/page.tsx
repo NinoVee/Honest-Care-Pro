@@ -19,7 +19,7 @@ export default async function DashboardPage() {
       include: { patient: true },
     }),
     db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
-    db.patient.count(),
+    db.patient.count({ where: { deletedAt: null } }),,
   ]);
 
   return (

@@ -18,9 +18,11 @@ export function SiteHeader() {
     <header className="bg-navy text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
         <Link href="/" className="flex min-w-0 items-center gap-2 md:gap-3" onClick={() => setIsMenuOpen(false)}>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center md:h-14 md:w-14">
-            <ShieldCrossIcon />
-          </span>
+          <img
+            src="/logo-icon.png"
+            alt="Honest Care"
+            className="h-10 w-10 shrink-0 object-contain md:h-14 md:w-14"
+          />
           <div className="min-w-0 leading-tight">
             <div className="truncate font-display text-base font-semibold md:text-lg">Honest Care</div>
             <div className="hidden truncate text-xs text-white/60 sm:block">
@@ -71,15 +73,6 @@ export function SiteHeader() {
         </nav>
       )}
     </header>
-  );
-}
-
-function ShieldCrossIcon() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2 4 5v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V5l-8-3Z" stroke="white" strokeWidth="1.6" />
-      <path d="M12 8v8M8 12h8" stroke="#14B1A2" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
   );
 }
 
