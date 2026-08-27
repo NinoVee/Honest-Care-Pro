@@ -2,6 +2,8 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { StatusPill } from "@/components/StatusPill";
 
+export const dynamic = "force-dynamic";
+
 export default async function SchedulePage() {
   const visits = await db.visit.findMany({
     orderBy: { scheduledAt: "asc" },
@@ -45,7 +47,7 @@ export default async function SchedulePage() {
                     </div>
                   </div>
                 </div>
-                <StatusPill status={v.status} />
+                <StatusPill text={v.status} color="var(--teal)" />
               </Link>
             ))}
           </div>

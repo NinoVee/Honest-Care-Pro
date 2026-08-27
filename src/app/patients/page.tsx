@@ -2,6 +2,8 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { createPatient } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function PatientsPage() {
   const patients = await db.patient.findMany({
     where: { deletedAt: null },
@@ -67,6 +69,24 @@ export default async function PatientsPage() {
           <div>
             <label className="field-label" htmlFor="email">Email</label>
             <input className="field-input" id="email" name="email" type="email" />
+          </div>
+          <div>
+            <label className="field-label" htmlFor="addressLine">Address</label>
+            <input className="field-input" id="addressLine" name="addressLine" placeholder="123 Main St" />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="field-label" htmlFor="city">City</label>
+              <input className="field-input" id="city" name="city" />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="state">State</label>
+              <input className="field-input" id="state" name="state" />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="postalCode">ZIP</label>
+              <input className="field-input" id="postalCode" name="postalCode" />
+            </div>
           </div>
           <div>
             <label className="field-label" htmlFor="allergies">Allergies (comma-separated)</label>
