@@ -1,6 +1,3 @@
-// Seeds clearly-fictional test data only, per the spec's clinical safety
-// requirement: "Do not populate realistic production patients."
-
 import { PrismaClient, UserRole } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -37,6 +34,15 @@ async function main() {
     },
   });
 
+  // 20 tablets in rotation, all available at first.
+  for (let i = 1; i <= 20; i++) {
+    await prisma.tablet.create({
+      data: { identifier: `TABLET-${String(i).padStart(2, "0")}` },
+    });
+  }
+
+  const tablet1 = await prisma.tablet.findUniqueOrThrow({ where: { identifier: "TABLET-01" } });
+
   const patient = await prisma.patient.create({
     data: {
       organizationId: org.id,
@@ -44,10 +50,13 @@ async function main() {
       lastName: "Patient-A",
       medicalRecordNumber: "MRN-TEST-0001",
       dateOfBirth: new Date("1950-01-01"),
+      phone: "+15550001234",
       allergies: ["Penicillin (fictional test data)"],
       precautions: ["Fall risk (fictional test data)"],
+      assignedTabletId: tablet1.id,
     },
   });
+  await prisma.tablet.update({ where: { id: tablet1.id }, data: { status: "ASSIGNED" } });
 
   const plan = await prisma.treatmentPlan.create({
     data: {
@@ -80,7 +89,7 @@ async function main() {
     },
   });
 
-  console.log("Seeded fictional demo data.");
+  console.log("Seeded fictional demo data + 20 tablets.");
 }
 
 main()

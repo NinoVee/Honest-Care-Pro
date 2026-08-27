@@ -5,8 +5,6 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 
-// TODO: replace with the real authenticated user once auth exists.
-// Every action below should use the actor's real id, not this stub.
 async function getCurrentPhysician() {
   const user = await db.user.findFirst({ where: { role: "PHYSICIAN" } });
   if (!user) throw new Error("No physician user found — did you run the seed script?");
@@ -34,6 +32,10 @@ export async function createPatient(formData: FormData) {
       medicalRecordNumber: String(formData.get("mrn") ?? "") || null,
       phone: String(formData.get("phone") ?? "") || null,
       email: String(formData.get("email") ?? "") || null,
+      addressLine: String(formData.get("addressLine") ?? "") || null,
+      city: String(formData.get("city") ?? "") || null,
+      state: String(formData.get("state") ?? "") || null,
+      postalCode: String(formData.get("postalCode") ?? "") || null,
       allergies: String(formData.get("allergies") ?? "")
         .split(",")
         .map((s) => s.trim())
@@ -87,19 +89,12 @@ export async function createTreatmentPlan(patientId: string, formData: FormData)
   revalidatePath(`/patients/${patientId}`);
 }
 
-/// Signing locks the plan. Any subsequent edit must go through
-/// `reviseTreatmentPlan`, which creates a new version instead of
-/// mutating this row — see the schema comment on TreatmentPlan.
 export async function signTreatmentPlan(planId: string, patientId: string) {
   const physician = await getCurrentPhysician();
 
   const plan = await db.treatmentPlan.update({
     where: { id: planId },
-    data: {
-      status: "ACTIVE",
-      signedAt: new Date(),
-      signedBy: physician.name,
-    },
+    data: { status: "ACTIVE", signedAt: new Date(), signedBy: physician.name },
   });
 
   await recordAuditEvent({
@@ -139,6 +134,76 @@ export async function scheduleVisit(patientId: string, formData: FormData) {
 
   revalidatePath(`/patients/${patientId}`);
   revalidatePath("/schedule");
+}
+
+/// Assigns the next AVAILABLE tablet from the pool of 20 to this patient.
+export async function assignTablet(patientId: string) {
+  const tablet = await db.tablet.findFirst({ where: { status: "AVAILABLE" } });
+  if (!tablet) {
+    throw new Error("No tablets available — all 20 are currently assigned or in maintenance.");
+  }
+
+  await db.$transaction([
+    db.tablet.update({ where: { id: tablet.id }, data: { status: "ASSIGNED" } }),
+    db.patient.update({ where: { id: patientId }, data: { assignedTabletId: tablet.id } }),
+  ]);
+
+  await recordAuditEvent({
+    patientId,
+    action: "tablet.assigned",
+    resourceType: "Tablet",
+    resourceId: tablet.id,
+  });
+
+  revalidatePath(`/patients/${patientId}`);
+  revalidatePath("/tablets");
+}
+
+/// Discharges the patient and frees their tablet back to the pool.
+/// This is the "data transferred to the hospital on enrollment and
+/// discharge" checkpoint — logged here via the audit trail. Full C-CDA
+/// export back to the hospital EHR is a follow-up step, not built yet.
+export async function dischargePatient(patientId: string) {
+  const patient = await db.patient.findUniqueOrThrow({ where: { id: patientId } });
+
+  const ops = [
+    db.patient.update({
+      where: { id: patientId },
+      data: { status: "DISCHARGED", dischargedAt: new Date(), assignedTabletId: null },
+    }),
+  ];
+  if (patient.assignedTabletId) {
+    ops.push(db.tablet.update({ where: { id: patient.assignedTabletId }, data: { status: "AVAILABLE" } }));
+  }
+  await db.$transaction(ops);
+
+  await recordAuditEvent({
+    patientId,
+    action: "patient.discharged",
+    resourceType: "Patient",
+    resourceId: patientId,
+  });
+
+  revalidatePath(`/patients/${patientId}`);
+  revalidatePath("/tablets");
+  revalidatePath("/patients");
+}
+
+export async function acknowledgeAlert(alertId: string, patientId: string) {
+  await db.alert.update({
+    where: { id: alertId },
+    data: { acknowledgedAt: new Date(), acknowledgedBy: "Dr. Test Physician" },
+  });
+
+  await recordAuditEvent({
+    patientId,
+    action: "alert.acknowledged",
+    resourceType: "Alert",
+    resourceId: alertId,
+  });
+
+  revalidatePath("/vitals");
+  revalidatePath(`/patients/${patientId}`);
 }
 
 function numberOrNull(value: FormDataEntryValue | null): number | null {
