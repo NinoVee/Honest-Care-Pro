@@ -4,6 +4,7 @@ import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert
 import { StatusPill } from "@/components/StatusPill";
 import { HeartRateTrendChart } from "./HeartRateTrendChart";
 import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
+import { CallPatientButtons } from "./CallPatientButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,17 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
             </form>
           </div>
         )}
+      </section>
+
+      <section className="card p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-subtle">
+          Call Patient
+        </h2>
+        <CallPatientButtons
+          patientId={patient.id}
+          patientName={`${patient.firstName} ${patient.lastName}`}
+          phone={patient.phone}
+        />
       </section>
 
       {(patient.allergies.length > 0 || patient.precautions.length > 0) && (
