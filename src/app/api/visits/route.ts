@@ -3,14 +3,19 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/// Read-only itinerary feed for the iOS app. Optionally filter by nurseId
-/// so a nurse only sees visits assigned to them.
-/// TODO: require a real auth token once login exists — this is unauthenticated.
+/// Read-only itinerary feed for the iOS app. The web app is the source
+/// of truth — a patient removed via removePatientFromProgram() sets
+/// deletedAt, and this filter ensures their visits stop appearing on
+/// any nurse's iPad the next time it syncs, without needing to touch
+/// the iOS app's own data model.
 export async function GET(req: NextRequest) {
   const nurseId = req.nextUrl.searchParams.get("nurseId");
 
   const visits = await db.visit.findMany({
-    where: nurseId ? { nurseId } : undefined,
+    where: {
+      ...(nurseId ? { nurseId } : {}),
+      patient: { deletedAt: null },
+    },
     include: { patient: true, nurse: true, treatmentPlan: true },
     orderBy: { scheduledAt: "asc" },
   });
