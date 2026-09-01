@@ -278,6 +278,8 @@ export async function acknowledgeAlert(alertId: string, patientId: string) {
   revalidatePath(`/patients/${patientId}`);
 }
 
+/// Web-side check-in — lets command center staff record attendance
+/// directly, same digital footprint as the iOS app's check-in.
 export async function checkInVisit(visitId: string, patientId: string) {
   const visit = await db.visit.update({
     where: { id: visitId },

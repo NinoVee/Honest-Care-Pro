@@ -47,7 +47,13 @@ export default async function SchedulePage() {
                     </div>
                   </div>
                 </div>
-                <StatusPill status={v.status} />
+                <div className="flex items-center gap-4">
+                  <div className="text-right text-xs text-subtle">
+                    {v.checkInAt && <div>In: {new Date(v.checkInAt).toLocaleTimeString()}</div>}
+                    {v.checkOutAt && <div>Out: {new Date(v.checkOutAt).toLocaleTimeString()}</div>}
+                  </div>
+                  <StatusPill status={v.status} />
+                </div>
               </Link>
             ))}
           </div>

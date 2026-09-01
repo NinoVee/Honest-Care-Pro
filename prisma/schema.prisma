@@ -1,10 +1,3 @@
-// Honest Care — Prisma schema (Phase 2/3/4/5 vertical slice)
-//
-// Scoped down from the full spec's 40+ table list to what this slice
-// actually uses. Field/identifier naming stays FHIR-friendly (e.g.
-// separate `externalIdentifiers` on Patient) so a FHIR mapping layer
-// can be added later without renaming core columns.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -85,13 +78,9 @@ model User {
   @@unique([organizationId, email])
 }
 
-/// One tablet is assigned to at most one patient at a time. When a
-/// patient is discharged, their tablet returns to AVAILABLE so it can
-/// be assigned to the next enrolling patient — 20 tablets rotate across
-/// however many patients pass through over time.
 model Tablet {
   id         String       @id @default(uuid())
-  identifier String       @unique // e.g. "TABLET-01"
+  identifier String       @unique
   status     TabletStatus @default(AVAILABLE)
   createdAt  DateTime     @default(now())
 
@@ -118,8 +107,8 @@ model Patient {
   allergies   String[] @default([])
   precautions String[] @default([])
 
-  status      PatientStatus @default(ENROLLED)
-  enrolledAt  DateTime      @default(now())
+  status       PatientStatus @default(ENROLLED)
+  enrolledAt   DateTime      @default(now())
   dischargedAt DateTime?
 
   assignedTablet   Tablet? @relation(fields: [assignedTabletId], references: [id])
@@ -169,6 +158,9 @@ model TreatmentPlan {
   visits Visit[]
 }
 
+/// checkInAt/checkOutAt form the digital footprint: a real timestamp
+/// proving a specific nurse physically began and ended a visit,
+/// visible immediately on the command center web app.
 model Visit {
   id         String   @id @default(uuid())
   patient    Patient  @relation(fields: [patientId], references: [id])
@@ -180,11 +172,13 @@ model Visit {
   nurse   User?   @relation("AssignedNurse", fields: [nurseId], references: [id])
   nurseId String?
 
-  serviceType String
-  scheduledAt DateTime
-  durationMin Int      @default(45)
-  status      VisitStatus @default(UNASSIGNED)
+  serviceType  String
+  scheduledAt  DateTime
+  durationMin  Int         @default(45)
+  status       VisitStatus @default(UNASSIGNED)
   instructions String?
+  checkInAt    DateTime?
+  checkOutAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -192,8 +186,6 @@ model Visit {
   measurements Measurement[]
 }
 
-/// Every vital sign submitted from the iOS app for an enrolled patient.
-/// This is what powers the web app's live vitals dashboard.
 model Measurement {
   id         String   @id @default(uuid())
   patient    Patient  @relation(fields: [patientId], references: [id])
@@ -201,7 +193,7 @@ model Measurement {
   visit      Visit?   @relation(fields: [visitId], references: [id])
   visitId    String?
 
-  kind       String   // "blood_pressure" | "spo2" | "weight" | "temperature" | "heart_rate" | "respiratory_rate" | "glucose" | "pain_scale"
+  kind       String
   systolic   Int?
   diastolic  Int?
   value      Float?
@@ -213,9 +205,6 @@ model Measurement {
   alerts    Alert[]
 }
 
-/// Created automatically when a measurement crosses the active treatment
-/// plan's configured thresholds. Requires explicit acknowledgment — no
-/// silent alerts, matching the spec's alerting requirements.
 model Alert {
   id            String    @id @default(uuid())
   patient       Patient   @relation(fields: [patientId], references: [id])

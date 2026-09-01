@@ -1,6 +1,15 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { createTreatmentPlan, signTreatmentPlan, scheduleVisit, acknowledgeAlert, assignTablet, removePatientFromProgram } from "../actions";
+import {
+  createTreatmentPlan,
+  signTreatmentPlan,
+  scheduleVisit,
+  acknowledgeAlert,
+  assignTablet,
+  removePatientFromProgram,
+  checkInVisit,
+  checkOutVisit,
+} from "../actions";
 import { StatusPill } from "@/components/StatusPill";
 import { HeartRateTrendChart } from "./HeartRateTrendChart";
 import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
@@ -239,14 +248,39 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
               <p className="text-sm text-subtle">No visits scheduled yet.</p>
             )}
             {patient.visits.map((v) => (
-              <div key={v.id} className="card flex items-center justify-between p-4">
-                <div>
-                  <div className="font-medium text-ink">{v.serviceType}</div>
+              <div key={v.id} className="card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-ink">{v.serviceType}</div>
+                    <div className="text-xs text-subtle">
+                      {v.scheduledAt.toLocaleString()} · {v.nurse?.name ?? "Unassigned"}
+                    </div>
+                  </div>
+                  <StatusPill status={v.status} />
+                </div>
+
+                <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3">
                   <div className="text-xs text-subtle">
-                    {v.scheduledAt.toLocaleString()} · {v.nurse?.name ?? "Unassigned"}
+                    {v.checkInAt ? (
+                      <div>✓ Checked in: {new Date(v.checkInAt).toLocaleString()}</div>
+                    ) : (
+                      <div>Not checked in</div>
+                    )}
+                    {v.checkOutAt && <div>✓ Checked out: {new Date(v.checkOutAt).toLocaleString()}</div>}
+                  </div>
+                  <div className="flex gap-2">
+                    {!v.checkInAt && (
+                      <form action={checkInVisit.bind(null, v.id, patient.id)}>
+                        <button type="submit" className="btn-secondary text-xs">Check In</button>
+                      </form>
+                    )}
+                    {v.checkInAt && !v.checkOutAt && (
+                      <form action={checkOutVisit.bind(null, v.id, patient.id)}>
+                        <button type="submit" className="btn-secondary text-xs">Check Out</button>
+                      </form>
+                    )}
                   </div>
                 </div>
-                <StatusPill status={v.status} />
               </div>
             ))}
           </div>
