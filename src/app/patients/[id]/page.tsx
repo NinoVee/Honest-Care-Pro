@@ -17,6 +17,7 @@ import { VitalTrendChart } from "./VitalTrendChart";
 import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
 import { CallPatientButtons } from "./CallPatientButtons";
 import { PhotoGallery } from "./PhotoGallery";
+import { PatientInfoCard } from "./PatientInfoCard";
 
 export const dynamic = "force-dynamic";
 
@@ -124,21 +125,12 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         <PhotoGallery patientId={patient.id} />
       </section>
 
-      {(patient.allergies.length > 0 || patient.precautions.length > 0) && (
-        <div className="card border-l-4 border-l-alert-urgent p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-alert-urgent">
-            Clinical Alerts
-          </h2>
-          <div className="flex flex-wrap gap-2 text-sm">
-            {patient.allergies.map((a) => (
-              <span key={a} className="pill bg-alert-urgent/10 text-alert-urgent">⚠ {a}</span>
-            ))}
-            {patient.precautions.map((p) => (
-              <span key={p} className="pill bg-alert-info/10 text-alert-info">{p}</span>
-            ))}
-          </div>
-        </div>
-      )}
+      <PatientInfoCard
+        patientId={patient.id}
+        allergies={patient.allergies}
+        currentMedications={patient.currentMedications}
+        notes={patient.notes}
+      />
 
       {patientAlerts.length > 0 && (
         <div className="space-y-3">

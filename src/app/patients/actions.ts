@@ -312,6 +312,32 @@ export async function checkOutVisit(visitId: string, patientId: string) {
   revalidatePath("/schedule");
 }
 
+export async function updatePatientInfo(patientId: string, formData: FormData) {
+  const allergies = String(formData.get("allergies") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const currentMedications = String(formData.get("currentMedications") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const notes = String(formData.get("notes") ?? "") || null;
+
+  await db.patient.update({
+    where: { id: patientId },
+    data: { allergies, currentMedications, notes },
+  });
+
+  await recordAuditEvent({
+    patientId,
+    action: "patient.info_updated",
+    resourceType: "Patient",
+    resourceId: patientId,
+  });
+
+  revalidatePath(`/patients/${patientId}`);
+}
+
 function numberOrNull(value: FormDataEntryValue | null): number | null {
   if (!value) return null;
   const n = Number(value);

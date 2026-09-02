@@ -104,8 +104,10 @@ model Patient {
   state                String?
   postalCode           String?
 
-  allergies   String[] @default([])
-  precautions String[] @default([])
+  allergies          String[] @default([])
+  precautions        String[] @default([])
+  currentMedications String[] @default([])
+  notes              String?
 
   status       PatientStatus @default(ENROLLED)
   enrolledAt   DateTime      @default(now())
@@ -159,9 +161,6 @@ model TreatmentPlan {
   visits Visit[]
 }
 
-/// checkInAt/checkOutAt form the digital footprint: a real timestamp
-/// proving a specific nurse physically began and ended a visit,
-/// visible immediately on the command center web app.
 model Visit {
   id         String   @id @default(uuid())
   patient    Patient  @relation(fields: [patientId], references: [id])
@@ -222,9 +221,6 @@ model Alert {
   createdAt DateTime @default(now())
 }
 
-/// Photos captured or uploaded from the iOS app during a visit,
-/// uploaded to Vercel Blob storage and visible immediately to
-/// physicians on the web app's patient page.
 model Photo {
   id         String   @id @default(uuid())
   patient    Patient  @relation(fields: [patientId], references: [id])

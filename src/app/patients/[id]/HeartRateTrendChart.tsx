@@ -1,66 +1,56 @@
 "use client";
 
 interface Point {
-  measuredAt: string; // ISO date string
+  measuredAt: string;
   value: number;
 }
 
-/// Plain SVG line chart — no charting library needed. Points are
-/// expected oldest-first for a left-to-right trend line.
-export function HeartRateTrendChart({ points }: { points: Point[] }) {
+interface Props {
+  points: Point[];
+}
+
+export function HeartRateTrendChart({ points }: Props) {
   if (points.length === 0) {
     return (
-      <p className="text-sm text-subtle">
-        No heart rate readings yet. Values captured from the nurse's iPad will appear here.
-      </p>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-navy">Heart Rate Trend</h3>
+        <p className="text-sm text-subtle">No heart rate readings yet.</p>
+      </div>
     );
   }
 
-  const width = 640;
-  const height = 180;
-  const padding = 32;
+  const width = 600;
+  const height = 160;
+  const padding = 24;
 
   const values = points.map((p) => p.value);
-  const minVal = Math.min(...values, 60) - 10;
-  const maxVal = Math.max(...values, 100) + 10;
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const range = maxValue - minValue || 1;
 
-  const xStep = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+  const coords = points.map((p, i) => {
+    const x = padding + (i / Math.max(points.length - 1, 1)) * (width - padding * 2);
+    const y = height - padding - ((p.value - minValue) / range) * (height - padding * 2);
+    return { x, y, value: p.value, measuredAt: p.measuredAt };
+  });
 
-  function xFor(i: number) {
-    return padding + i * xStep;
-  }
-  function yFor(v: number) {
-    return height - padding - ((v - minVal) / (maxVal - minVal)) * (height - padding * 2);
-  }
-
-  const pathD = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${xFor(i)} ${yFor(p.value)}`)
-    .join(" ");
+  const pathD = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x} ${c.y}`).join(" ");
 
   return (
-    <div className="overflow-x-auto">
-      <svg width={width} height={height} className="min-w-full">
-        {/* gridlines */}
-        {[minVal, (minVal + maxVal) / 2, maxVal].map((gridVal) => (
-          <g key={gridVal}>
-            <line
-              x1={padding} x2={width - padding}
-              y1={yFor(gridVal)} y2={yFor(gridVal)}
-              stroke="#00000010"
-            />
-            <text x={4} y={yFor(gridVal) + 4} fontSize="10" fill="#5C6B6F">
-              {Math.round(gridVal)}
-            </text>
-          </g>
-        ))}
-
-        <path d={pathD} fill="none" stroke="#14B1A2" strokeWidth={2} />
-
-        {points.map((p, i) => (
-          <circle key={i} cx={xFor(i)} cy={yFor(p.value)} r={3.5} fill="#14B1A2" />
+    <div>
+      <div className="mb-2 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-navy">Heart Rate Trend</h3>
+        <span className="text-xs text-subtle">
+          Latest: {values[values.length - 1]} bpm
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+        <path d={pathD} fill="none" stroke="#D4453C" strokeWidth={2} />
+        {coords.map((c, i) => (
+          <circle key={i} cx={c.x} cy={c.y} r={3} fill="#D4453C" />
         ))}
       </svg>
-      <div className="mt-1 flex justify-between text-xs text-subtle">
+      <div className="flex justify-between text-xs text-subtle">
         <span>{new Date(points[0].measuredAt).toLocaleDateString()}</span>
         <span>{new Date(points[points.length - 1].measuredAt).toLocaleDateString()}</span>
       </div>
