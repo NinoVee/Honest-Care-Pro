@@ -14,6 +14,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { HeartRateTrendChart } from "./HeartRateTrendChart";
 import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
 import { CallPatientButtons } from "./CallPatientButtons";
+import { PhotoGallery } from "./PhotoGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,13 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
           patientName={`${patient.firstName} ${patient.lastName}`}
           phone={patient.phone}
         />
+      </section>
+
+      <section className="card p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-subtle">
+          Photos
+        </h2>
+        <PhotoGallery patientId={patient.id} />
       </section>
 
       {(patient.allergies.length > 0 || patient.precautions.length > 0) && (

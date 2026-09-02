@@ -123,6 +123,7 @@ model Patient {
   measurements   Measurement[]
   alerts         Alert[]
   auditEvents    AuditLog[]
+  photos         Photo[]
 }
 
 model TreatmentPlan {
@@ -184,6 +185,7 @@ model Visit {
   updatedAt DateTime @updatedAt
 
   measurements Measurement[]
+  photos       Photo[]
 }
 
 model Measurement {
@@ -218,6 +220,24 @@ model Alert {
   acknowledgedBy String?
 
   createdAt DateTime @default(now())
+}
+
+/// Photos captured or uploaded from the iOS app during a visit,
+/// uploaded to Vercel Blob storage and visible immediately to
+/// physicians on the web app's patient page.
+model Photo {
+  id         String   @id @default(uuid())
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  patientId  String
+  visit      Visit?   @relation(fields: [visitId], references: [id])
+  visitId    String?
+
+  url        String
+  caption    String?
+  takenAt    DateTime @default(now())
+  uploadedBy String?
+
+  createdAt  DateTime @default(now())
 }
 
 model AuditLog {
