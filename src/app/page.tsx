@@ -46,7 +46,11 @@ export default async function DashboardPage() {
             <EmptyRow text="No visits scheduled today." />
           ) : (
             todaysVisits.map((v) => (
-              <div key={v.id} className="flex items-center justify-between py-2 text-sm">
+              <Link
+                key={v.id}
+                href={`/patients/${v.patientId}`}
+                className="flex items-center justify-between py-2 text-sm hover:text-teal"
+              >
                 <div>
                   <div className="font-medium text-ink">
                     {v.patient.firstName} {v.patient.lastName}
@@ -54,7 +58,7 @@ export default async function DashboardPage() {
                   <div className="text-subtle">{v.serviceType} — {v.nurse?.name ?? "Unassigned"}</div>
                 </div>
                 <StatusPill status={v.status} />
-              </div>
+              </Link>
             ))
           )}
         </DashboardCard>

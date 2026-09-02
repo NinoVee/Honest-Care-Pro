@@ -12,6 +12,8 @@ import {
 } from "../actions";
 import { StatusPill } from "@/components/StatusPill";
 import { HeartRateTrendChart } from "./HeartRateTrendChart";
+import { BloodPressureTrendChart } from "./BloodPressureTrendChart";
+import { VitalTrendChart } from "./VitalTrendChart";
 import { ConfirmRemovePatientButton } from "./ConfirmRemovePatientButton";
 import { CallPatientButtons } from "./CallPatientButtons";
 import { PhotoGallery } from "./PhotoGallery";
@@ -45,6 +47,30 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
 
   const heartRatePoints = vitals
     .filter((v) => v.kind === "heart_rate" && v.value != null)
+    .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+    .map((v) => ({ measuredAt: v.measuredAt.toISOString(), value: v.value as number }));
+
+  const bloodPressurePoints = vitals
+    .filter((v) => v.kind === "blood_pressure" && v.systolic != null && v.diastolic != null)
+    .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+    .map((v) => ({
+      measuredAt: v.measuredAt.toISOString(),
+      systolic: v.systolic as number,
+      diastolic: v.diastolic as number,
+    }));
+
+  const spo2Points = vitals
+    .filter((v) => v.kind === "spo2" && v.value != null)
+    .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+    .map((v) => ({ measuredAt: v.measuredAt.toISOString(), value: v.value as number }));
+
+  const weightPoints = vitals
+    .filter((v) => v.kind === "weight" && v.value != null)
+    .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
+    .map((v) => ({ measuredAt: v.measuredAt.toISOString(), value: v.value as number }));
+
+  const temperaturePoints = vitals
+    .filter((v) => v.kind === "temperature" && v.value != null)
     .sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
     .map((v) => ({ measuredAt: v.measuredAt.toISOString(), value: v.value as number }));
 
@@ -133,9 +159,23 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         </div>
       )}
 
-      <section className="card p-4">
-        <h2 className="mb-3 text-lg font-semibold text-navy">Heart Rate Trend</h2>
-        <HeartRateTrendChart points={heartRatePoints} />
+      <section className="card p-4 space-y-6">
+        <div>
+          <h2 className="mb-3 text-lg font-semibold text-navy">Heart Rate Trend</h2>
+          <HeartRateTrendChart points={heartRatePoints} />
+        </div>
+        <div className="border-t border-black/5 pt-6">
+          <BloodPressureTrendChart points={bloodPressurePoints} />
+        </div>
+        <div className="border-t border-black/5 pt-6">
+          <VitalTrendChart title="SpO2 Trend" unit="%" color="#14B1A2" points={spo2Points} />
+        </div>
+        <div className="border-t border-black/5 pt-6">
+          <VitalTrendChart title="Weight Trend" unit="lb" color="#0B1F3A" points={weightPoints} />
+        </div>
+        <div className="border-t border-black/5 pt-6">
+          <VitalTrendChart title="Temperature Trend" unit="°F" color="#E07856" points={temperaturePoints} />
+        </div>
       </section>
 
       <section>
