@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const patient = await db.patient.findUnique({ where: { id: params.id } });
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const patient = await db.patient.findUnique({ where: { id } });
 
   if (!patient || patient.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -21,9 +21,10 @@ import { PatientInfoCard } from "./PatientInfoCard";
 
 export const dynamic = "force-dynamic";
 
-export default async function PatientDetailPage({ params }: { params: { id: string } }) {
+export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const patient = await db.patient.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       treatmentPlans: { orderBy: { createdAt: "desc" } },
       visits: { orderBy: { scheduledAt: "desc" }, include: { nurse: true } },

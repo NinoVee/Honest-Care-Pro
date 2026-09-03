@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const visit = await db.visit.update({
-    where: { id: params.id },
+    where: { id },
     data: { checkOutAt: new Date(), status: "COMPLETED" },
   });
 
