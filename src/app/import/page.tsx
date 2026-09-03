@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 
+interface ParsedVital {
+  kind: string;
+  value?: number;
+  unit: string;
+  systolic?: number;
+  diastolic?: number;
+  measuredAt: string;
+}
+
 interface ParsedPatient {
   firstName: string | null;
   lastName: string | null;
@@ -11,6 +20,7 @@ interface ParsedPatient {
   city: string | null;
   state: string | null;
   postalCode: string | null;
+  vitals: ParsedVital[];
 }
 
 export default function ImportPage() {
@@ -44,7 +54,8 @@ export default function ImportPage() {
     form.set("city", parsed.city ?? "");
     form.set("state", parsed.state ?? "");
     form.set("postalCode", parsed.postalCode ?? "");
-    const res = await fetch("/api/patients/create-from-import", { method: "POST", body: form });
+    form.set("vitalsJson", JSON.stringify(parsed.vitals ?? []));
+    const res = await fetch("/patients/create-from-import", { method: "POST", body: form });
     setIsCreating(false);
     if (res.redirected) window.location.href = res.url;
   }
@@ -54,7 +65,8 @@ export default function ImportPage() {
       <h1 className="text-2xl font-semibold text-navy">Import C-CDA Document</h1>
       <p className="text-sm text-subtle">
         Drag a C-CDA (.xml) document from the hospital EHR here. This extracts patient
-        demographics for review — nothing is saved until you confirm below.
+        demographics and their most recent vital signs for review — nothing is saved
+        until you confirm below.
       </p>
 
       <div
@@ -94,6 +106,21 @@ export default function ImportPage() {
             <div><span className="text-subtle">Address:</span> {parsed.addressLine ?? "—"}</div>
             <div><span className="text-subtle">City/State/ZIP:</span> {[parsed.city, parsed.state, parsed.postalCode].filter(Boolean).join(", ") || "—"}</div>
           </div>
+          {parsed.vitals.length > 0 && (
+            <div className="border-t border-black/5 pt-3">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
+                Most Recent Vital Signs ({new Date(parsed.vitals[0].measuredAt).toLocaleString()})
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {parsed.vitals.map((v) => (
+                  <div key={v.kind}>
+                    <span className="text-subtle">{v.kind.replace("_", " ")}:</span>{" "}
+                    {v.kind === "blood_pressure" ? `${v.systolic}/${v.diastolic}` : v.value} {v.unit}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <button onClick={createFromParsed} disabled={isCreating} className="btn-primary">
             {isCreating ? "Creating…" : "Create Patient From This Import"}
           </button>

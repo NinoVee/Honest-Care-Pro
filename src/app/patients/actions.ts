@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
+import { importVitalsFromCcda } from "@/lib/ccdaVitalsImport";
 
 async function getCurrentPhysician() {
   const user = await db.user.findFirst({ where: { role: "PHYSICIAN" } });
@@ -69,6 +70,8 @@ export async function createPatient(formData: FormData) {
     resourceId: patient.id,
     patientId: patient.id,
   });
+
+  await importVitalsFromCcda(patient.id, formData.get("vitalsJson"));
 
   revalidatePath("/patients");
   revalidatePath("/tablets");

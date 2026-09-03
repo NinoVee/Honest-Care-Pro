@@ -8,6 +8,15 @@ interface Tablet {
   identifier: string;
 }
 
+interface ParsedVital {
+  kind: string;
+  value?: number;
+  unit: string;
+  systolic?: number;
+  diastolic?: number;
+  measuredAt: string;
+}
+
 interface ParsedFields {
   firstName: string | null;
   lastName: string | null;
@@ -17,12 +26,14 @@ interface ParsedFields {
   city: string | null;
   state: string | null;
   postalCode: string | null;
+  vitals: ParsedVital[];
 }
 
 export function AddPatientForm({ availableTablets }: { availableTablets: Tablet[] }) {
   const [isDragging, setIsDragging] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
+  const [importedVitals, setImportedVitals] = useState<ParsedVital[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [fields, setFields] = useState({
@@ -65,6 +76,7 @@ export function AddPatientForm({ availableTablets }: { availableTablets: Tablet[
       state: parsed.state ?? f.state,
       postalCode: parsed.postalCode ?? f.postalCode,
     }));
+    setImportedVitals(parsed.vitals ?? []);
     setImportedFileName(file.name);
   }
 
@@ -73,6 +85,7 @@ export function AddPatientForm({ availableTablets }: { availableTablets: Tablet[
     setIsSubmitting(true);
     const formData = new FormData();
     Object.entries(fields).forEach(([key, value]) => formData.set(key, value));
+    formData.set("vitalsJson", JSON.stringify(importedVitals));
     await createPatient(formData); // server action — redirects to the new patient's page on success
   }
 
@@ -97,7 +110,11 @@ export function AddPatientForm({ availableTablets }: { availableTablets: Tablet[
         >
           <label className="cursor-pointer px-4 text-sm text-subtle">
             {importedFileName
-              ? `Loaded "${importedFileName}" — fields below are pre-filled. Review before submitting.`
+              ? `Loaded "${importedFileName}" — fields below are pre-filled${
+                  importedVitals.length > 0
+                    ? `, plus ${importedVitals.length} most-recent vital sign${importedVitals.length === 1 ? "" : "s"}`
+                    : ""
+                }. Review before submitting.`
               : "Drag a C-CDA (.xml) file here, or click to browse"}
             <input
               type="file"

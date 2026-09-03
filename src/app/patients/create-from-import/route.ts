@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
+import { importVitalsFromCcda } from "@/lib/ccdaVitalsImport";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -28,6 +29,8 @@ export async function POST(req: NextRequest) {
     resourceId: patient.id,
     patientId: patient.id,
   });
+
+  await importVitalsFromCcda(patient.id, formData.get("vitalsJson"));
 
   return NextResponse.redirect(new URL(`/patients/${patient.id}`, req.url));
 }
