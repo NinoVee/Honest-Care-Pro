@@ -130,6 +130,12 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
         allergies={patient.allergies}
         currentMedications={patient.currentMedications}
         notes={patient.notes}
+        addressLine={patient.addressLine}
+        city={patient.city}
+        state={patient.state}
+        postalCode={patient.postalCode}
+        buildingCode={patient.buildingCode}
+        entryEta={patient.entryEta}
       />
 
       {patientAlerts.length > 0 && (

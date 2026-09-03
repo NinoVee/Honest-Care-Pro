@@ -5,9 +5,28 @@ interface Props {
   allergies: string[];
   currentMedications: string[];
   notes: string | null;
+  addressLine: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  buildingCode: string | null;
+  entryEta: string | null;
 }
 
-export function PatientInfoCard({ patientId, allergies, currentMedications, notes }: Props) {
+export function PatientInfoCard({
+  patientId,
+  allergies,
+  currentMedications,
+  notes,
+  addressLine,
+  city,
+  state,
+  postalCode,
+  buildingCode,
+  entryEta,
+}: Props) {
+  const cityStateZip = [city, state, postalCode].filter(Boolean).join(", ");
+
   return (
     <section className="card p-4">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-subtle">
@@ -15,6 +34,30 @@ export function PatientInfoCard({ patientId, allergies, currentMedications, note
       </h2>
 
       <div className="space-y-4">
+        <div>
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Address</h3>
+          {addressLine || cityStateZip ? (
+            <p className="text-sm text-ink">
+              {addressLine}
+              {addressLine && cityStateZip && <br />}
+              {cityStateZip}
+            </p>
+          ) : (
+            <p className="text-sm text-subtle">No address on file.</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Building Code</h3>
+            <p className="text-sm text-ink">{buildingCode || "None recorded."}</p>
+          </div>
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">ETA for Entry</h3>
+            <p className="text-sm text-ink">{entryEta || "None recorded."}</p>
+          </div>
+        </div>
+
         <div>
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Allergies</h3>
           {allergies.length === 0 ? (
@@ -52,6 +95,52 @@ export function PatientInfoCard({ patientId, allergies, currentMedications, note
           + Edit Patient Information
         </summary>
         <form action={updatePatientInfo.bind(null, patientId)} className="mt-4 space-y-3">
+          <div>
+            <label className="field-label" htmlFor="addressLine">Address</label>
+            <input
+              className="field-input"
+              id="addressLine"
+              name="addressLine"
+              defaultValue={addressLine ?? ""}
+              placeholder="123 Main St"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="field-label" htmlFor="city">City</label>
+              <input className="field-input" id="city" name="city" defaultValue={city ?? ""} />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="state">State</label>
+              <input className="field-input" id="state" name="state" defaultValue={state ?? ""} />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="postalCode">ZIP</label>
+              <input className="field-input" id="postalCode" name="postalCode" defaultValue={postalCode ?? ""} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label" htmlFor="buildingCode">Building Code</label>
+              <input
+                className="field-input"
+                id="buildingCode"
+                name="buildingCode"
+                defaultValue={buildingCode ?? ""}
+                placeholder="Gate/keypad code, e.g. #1234"
+              />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="entryEta">ETA for Entry</label>
+              <input
+                className="field-input"
+                id="entryEta"
+                name="entryEta"
+                defaultValue={entryEta ?? ""}
+                placeholder="e.g. Text 15 min before arrival"
+              />
+            </div>
+          </div>
           <div>
             <label className="field-label" htmlFor="allergies">Allergies (comma-separated)</label>
             <input

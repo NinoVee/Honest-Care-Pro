@@ -103,6 +103,8 @@ model Patient {
   city                 String?
   state                String?
   postalCode           String?
+  buildingCode         String?
+  entryEta             String?
 
   allergies          String[] @default([])
   precautions        String[] @default([])

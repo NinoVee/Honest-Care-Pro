@@ -325,10 +325,26 @@ export async function updatePatientInfo(patientId: string, formData: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
   const notes = String(formData.get("notes") ?? "") || null;
+  const addressLine = String(formData.get("addressLine") ?? "") || null;
+  const city = String(formData.get("city") ?? "") || null;
+  const state = String(formData.get("state") ?? "") || null;
+  const postalCode = String(formData.get("postalCode") ?? "") || null;
+  const buildingCode = String(formData.get("buildingCode") ?? "") || null;
+  const entryEta = String(formData.get("entryEta") ?? "") || null;
 
   await db.patient.update({
     where: { id: patientId },
-    data: { allergies, currentMedications, notes },
+    data: {
+      allergies,
+      currentMedications,
+      notes,
+      addressLine,
+      city,
+      state,
+      postalCode,
+      buildingCode,
+      entryEta,
+    },
   });
 
   await recordAuditEvent({
